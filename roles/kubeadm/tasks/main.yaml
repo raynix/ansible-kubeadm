@@ -51,9 +51,14 @@
     name: kubeadm
     update_cache: yes
 
-- name: copy kubeadm conf
-  when: inventory_hostname == 'kmaster'
-  template:
-    src: kubeadm_conf.yaml
-    dest: /root/kubeadm_conf.yaml
-
+- name: use iptables-legacy
+  alternatives:
+    name: '{{ item.name }}'
+    path: '{{ item.path }}'
+  with_items:
+    - name: iptables
+      path: /usr/sbin/iptables-legacy
+    - name: ip6tables
+      path: /usr/sbin/ip6tables-legacy
+    - name: ebtables
+      path: /usr/sbin/ebtables-legacy
