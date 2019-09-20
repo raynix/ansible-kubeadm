@@ -1,0 +1,12 @@
+
+[k8s:children]
+k8s-master
+k8s-nodes
+
+[k8s-master]
+kmaster ansible_host=192.168.1.80 ansible_user=pi
+
+[k8s-nodes]
+knode1 ansible_host=192.168.1.81 ansible_user=pi
+knode2 ansible_host=192.168.1.82 ansible_user=pi
+

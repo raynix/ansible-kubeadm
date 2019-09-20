@@ -1,0 +1,7 @@
+---
+- name: kubeadm cluser
+  hosts: k8s
+  become: true
+  tags: k8s,kubeadm
+  roles:
+    - kubeadm
