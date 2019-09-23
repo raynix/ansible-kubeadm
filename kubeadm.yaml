@@ -5,3 +5,10 @@
   tags: k8s,kubeadm
   roles:
     - kubeadm
+
+- name: telegraf
+  hosts: k8s
+  become: true
+  tags: k8s,telegraf
+  roles:
+    - telegraf

@@ -1,0 +1,27 @@
+- name: add telegraf repo key
+  apt_key:
+    url: https://repos.influxdata.com/influxdb.key
+    state: present
+
+- name: add telegraf repo
+  apt_repository:
+    repo: deb https://repos.influxdata.com/debian buster stable
+    state: present
+
+- name: install telegraf
+  apt:
+    name: telegraf
+    update_cache: yes
+    state: present
+
+- name: update telegraf configuration
+  lineinfile:
+    path: /etc/telegraf/telegraf.conf
+    line: 'urls = ["http://192.168.1.51:8086"]'
+    regexp: '# urls = \["http://127\.0\.0\.1:8086"\]'
+
+- name: restart telegraf service
+  systemd:
+    name: telegraf
+    state: restarted
+    enabled: yes
