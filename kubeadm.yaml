@@ -6,9 +6,11 @@
   roles:
     - kubeadm
 
+# use tag to exclude/include telegraf, ie. -t k8s to exclude, -t k8s,telegraf to include.
+# I use prometheus to monitor system metrics now.
 - name: telegraf
   hosts: k8s
   become: true
-  tags: k8s,telegraf
+  tags: telegraf
   roles:
     - telegraf
