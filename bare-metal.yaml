@@ -1,0 +1,7 @@
+---
+- name: telegraf
+  hosts: core
+  become: true
+  tags: telegraf
+  roles:
+    - telegraf
