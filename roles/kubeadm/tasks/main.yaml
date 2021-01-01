@@ -35,6 +35,12 @@
   timezone:
     name: Australia/Melbourne
 
+- name: install dependencies
+  apt:
+    name: ['nfs-common']
+    update_cache: yes
+
+
 - name: install docker
   shell: 'curl -sSL get.docker.com | sh'
   args:
