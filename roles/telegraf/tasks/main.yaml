@@ -21,18 +21,9 @@
     state: started
 
 - name: update telegraf configuration
-  lineinfile:
-    path: /etc/telegraf/telegraf.conf
-    line: '  urls = ["http://192.168.1.51:8086"]'
-    firstmatch: yes
-    insertafter: '^\[\[outputs.influxdb\]\]'
-  notify:
-    - reload telegraf
-
-- name: enable network io
-  lineinfile:
-    path: /etc/telegraf/telegraf.conf
-    line: '[[inputs.net]]'
-    regexp: '^# \[\[inputs\.net\]\]'
+  template:
+    src: telegraf.conf.j2
+    dest: /etc/telegraf/telegraf.conf
+    mode: 0644
   notify:
     - reload telegraf
