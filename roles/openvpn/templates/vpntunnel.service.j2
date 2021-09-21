@@ -1,0 +1,11 @@
+[Unit]
+Description=Setup an openvpn tunnel to kite server
+After=network.target
+
+[Service]
+ExecStart=/usr/sbin/openvpn --config /etc/openvpn/{{inventory_hostname}}.ovpn
+RestartSec=5
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,7 @@
+- name: proxy
+  hosts: proxy
+  become: true
+  tags: openvpn,proxy
+  roles:
+    - common
+    - openvpn

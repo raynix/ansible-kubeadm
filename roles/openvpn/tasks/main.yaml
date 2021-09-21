@@ -1,0 +1,25 @@
+- name: install openvpn
+  apt:
+    name: openvpn
+    update_cache: yes
+    state: latest
+
+- name: install openvpn-tunnel service
+  template:
+    src: vpntunnel.service.j2
+    dest: /etc/systemd/system/vpntunnel.service
+    mode: 0644
+
+- name: copy openvpn client configuration(not checked in obviously)
+  template:
+    src: "{{inventory_hostname}}.ovpn"
+    dest: "/etc/openvpn/{{inventory_hostname}}.ovpn"
+    mode: 0644
+
+- name: enable openvpn-tunnel service
+  ansible.builtin.systemd:
+    daemon_reload: yes
+    name: vpntunnel
+    enabled: yes
+    state: started
+
