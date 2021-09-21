@@ -1,1 +1,2 @@
 influxdb_url: http://192.168.1.51:8086
+tls_node_port: 31179
