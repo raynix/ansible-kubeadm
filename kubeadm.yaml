@@ -4,6 +4,7 @@
   become: true
   tags: k8s,kubeadm
   roles:
+    - common
     - kubeadm
 
 # use tag to exclude/include telegraf, ie. -t k8s to exclude, -t k8s,telegraf to include.

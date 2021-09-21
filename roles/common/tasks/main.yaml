@@ -1,0 +1,30 @@
+---
+- name: set hostname
+  hostname:
+    name: '{{inventory_hostname}}'
+
+- name: update hosts
+  lineinfile:
+    path: /etc/hosts
+    line: '127.0.0.1 {{inventory_hostname}}'
+
+- name: Disable swap
+  shell: swapoff -a
+
+- name: Disable swap permanently
+  when: ansible_facts['architecture'] == 'arm'
+  systemd:
+    name: dphys-swapfile
+    state: stopped
+    enabled: no
+
+- name: Disable swap permanently on Ubuntu
+  when: ansible_facts['distribution'] == 'Ubuntu'
+  replace:
+    path: /etc/fstab
+    regexp: '^(\/swap\.img.*)$'
+    replace: '# \1'
+
+- name: set timezone
+  timezone:
+    name: Australia/Melbourne
