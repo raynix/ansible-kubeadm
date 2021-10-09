@@ -70,7 +70,18 @@ stream {
     }
 
     server{
-        listen 6443 ;
+        listen {{ tls_port }};
         proxy_pass knodes2;
+	}
+
+    upstream knodes_mc {
+{% for host in groups['k8s-nodes'] %}
+        server {{ hostvars[host].ansible_host }}:{{ minecraft_node_port }};
+{% endfor %}
+    }
+
+    server{
+        listen {{ minecraft_port }};
+        proxy_pass knodes_mc;
 	}
 }
