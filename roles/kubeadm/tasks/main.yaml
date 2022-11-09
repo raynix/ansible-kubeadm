@@ -1,27 +1,50 @@
 ---
-- name: network bridge
-  when: ansible_facts['architecture'] == 'arm'
-  sysctl:
+- name: sysctl iptables
+  ansible.posix.sysctl:
     name: net.bridge.bridge-nf-call-iptables
-    value: 1
+    value: '1'
+
+- name: sysctl ip6tables
+  ansible.posix.sysctl:
+    name: net.bridge.bridge-nf-call-ip6tables
+    value: '1'
+
+- name: sysctl ip forward
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_forward
+    value: '1'
 
 - name: install dependencies
-  apt:
+  ansible.builtin.apt:
     name: ['nfs-common']
     update_cache: yes
 
+- name: modprobe
+  community.general.modprobe:
+    name: '{{ item }}'
+    state: present
+    with_items:
+      - overlay
+      - br_netfilter
 
-- name: install docker
-  shell: 'curl -sSL get.docker.com | sh'
-  args:
-    warn: false
-    creates: /usr/bin/docker
+- name: install containerd
+  ansible.builtin.unarchive:
+    src: https://github.com/containerd/containerd/releases/download/v1.6.9/containerd-1.6.9-linux-amd64.tar.gz
+    dest: /usr/local
+    remote_src: yes
 
-- name: default user to docker group
-  user:
-    name: "{{ ansible_user }}"
-    append: yes
-    groups: docker
+- name: install runc
+  ansible.builtin.get_url:
+    url: https://github.com/opencontainers/runc/releases/download/v1.1.4/runc.amd64
+    dest: /usr/local/sbin/runc
+    mode: '755'
+
+- name: install cni plugin
+  ansible.builtin.unarchive:
+    src: https://github.com/containernetworking/plugins/releases/download/v1.1.1/cni-plugins-linux-amd64-v1.1.1.tgz
+    dest: /opt/cni/bin
+    remote_src: yes
+
 
 - name: add kubeadm key
   apt_key:
@@ -32,18 +55,18 @@
     repo: deb http://apt.kubernetes.io/ kubernetes-xenial main
 
 - name: install kubeadm
-  apt:
-    name: kubeadm
+  ansible.builtin.apt:
+    name: kubeadm=1.24.7-00
     update_cache: yes
 
-- name: use iptables-legacy
-  alternatives:
-    name: '{{ item.name }}'
-    path: '{{ item.path }}'
-  with_items:
-    - name: iptables
-      path: /usr/sbin/iptables-legacy
-    - name: ip6tables
-      path: /usr/sbin/ip6tables-legacy
-    - name: ebtables
-      path: /usr/sbin/ebtables-legacy
+# - name: use iptables-legacy
+#   alternatives:
+#     name: '{{ item.name }}'
+#     path: '{{ item.path }}'
+#   with_items:
+#     - name: iptables
+#       path: /usr/sbin/iptables-legacy
+#     - name: ip6tables
+#       path: /usr/sbin/ip6tables-legacy
+#     - name: ebtables
+#       path: /usr/sbin/ebtables-legacy
