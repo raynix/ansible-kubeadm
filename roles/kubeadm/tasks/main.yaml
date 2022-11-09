@@ -19,19 +19,44 @@
     name: ['nfs-common']
     update_cache: yes
 
-- name: modprobe
+- name: modprobe overlay
   community.general.modprobe:
-    name: '{{ item }}'
+    name: overlay
     state: present
-    with_items:
-      - overlay
-      - br_netfilter
+
+- name: modprobe br_netfilter
+  community.general.modprobe:
+    name: br_netfilter
+    state: present
 
 - name: install containerd
   ansible.builtin.unarchive:
     src: https://github.com/containerd/containerd/releases/download/v1.6.9/containerd-1.6.9-linux-amd64.tar.gz
     dest: /usr/local
     remote_src: yes
+
+- name: mkdir
+  file:
+    path: /usr/local/lib/systemd/system
+    state: directory
+
+- name: install containerd systemd service
+  ansible.builtin.get_url:
+    url: https://raw.githubusercontent.com/containerd/containerd/main/containerd.service
+    dest: /usr/local/lib/systemd/system/containerd.service
+    mode: '644'
+
+- name: copy containerd config
+  ansible.builtin.template:
+    src: containerd.config.toml
+    dest: /etc/containerd/config.toml
+    mode: '0644'
+
+- name: enable containerd service
+  ansible.builtin.systemd:
+    state: restarted
+    daemon_reload: yes
+    name: containerd
 
 - name: install runc
   ansible.builtin.get_url:
@@ -56,9 +81,11 @@
 
 - name: install kubeadm
   ansible.builtin.apt:
-    name: kubeadm=1.24.7-00
+    name: "{{ item }}"
     update_cache: yes
-
+  with_items:
+    - kubeadm=1.24.7-00
+    - kubelet=1.24.7-00
 # - name: use iptables-legacy
 #   alternatives:
 #     name: '{{ item.name }}'
