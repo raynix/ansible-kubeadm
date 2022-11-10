@@ -24,23 +24,26 @@
   ansible.builtin.apt:
     name: ['nfs-common']
     update_cache: yes
+  with_items:
+    - curl
+    - gnupg2
+    - software-properties-common
+    - apt-transport-https
+    - ca-certificates
+    - nfs-common
 
 - name: install containerd
   ansible.builtin.unarchive:
-    src: https://github.com/containerd/containerd/releases/download/v1.6.9/containerd-1.6.9-linux-amd64.tar.gz
-    dest: /usr/local
+    src: https://github.com/containerd/containerd/releases/download/v1.6.9/cri-containerd-1.6.9-linux-amd64.tar.gz
+    dest: /
     remote_src: yes
 
 - name: mkdir
   file:
-    path: /usr/local/lib/systemd/system
+    path: "{{ item }}"
     state: directory
-
-- name: install containerd systemd service
-  ansible.builtin.get_url:
-    url: https://raw.githubusercontent.com/containerd/containerd/main/containerd.service
-    dest: /usr/local/lib/systemd/system/containerd.service
-    mode: '644'
+  with_items:
+    - /etc/containerd
 
 - name: copy containerd config
   ansible.builtin.template:
@@ -54,17 +57,11 @@
     daemon_reload: yes
     name: containerd
 
-- name: install runc
-  ansible.builtin.get_url:
-    url: https://github.com/opencontainers/runc/releases/download/v1.1.4/runc.amd64
-    dest: /usr/local/sbin/runc
-    mode: '755'
-
-- name: install cni plugin
-  ansible.builtin.unarchive:
-    src: https://github.com/containernetworking/plugins/releases/download/v1.1.1/cni-plugins-linux-amd64-v1.1.1.tgz
-    dest: /opt/cni/bin
-    remote_src: yes
+# - name: install cni plugin
+#   ansible.builtin.unarchive:
+#     src: https://github.com/containernetworking/plugins/releases/download/v1.1.1/cni-plugins-linux-amd64-v1.1.1.tgz
+#     dest: /opt/cni/bin
+#     remote_src: yes
 
 
 - name: add kubeadm key
@@ -79,6 +76,7 @@
   ansible.builtin.apt:
     name: "{{ item }}"
     update_cache: yes
+    allow_downgrade: yes
   with_items:
-    - kubeadm=1.25.3-00
-    - kubelet=1.25.3-00
+    - kubeadm=1.24.7-00
+    - kubelet=1.24.7-00
