@@ -3,3 +3,17 @@ tls_node_port: 31179
 tls_port: 6443
 minecraft_node_port: 32074
 minecraft_port: 25565
+kernel_modules:
+  - bridge
+  - ip_tables
+  - nf_conntrack
+  - nf_nat
+  - x_tables
+  - overlay
+  - br_netfilter
+  - iptable_mangle
+  - iptable_nat
+  - xt_REDIRECT
+  - xt_conntrack
+  - xt_owner
+  - xt_tcpudp

@@ -1,0 +1,4 @@
+# moduels needed by kubeadm
+{% for mod in kernel_modules %}
+{{ mod }}
+{% endfor %}
