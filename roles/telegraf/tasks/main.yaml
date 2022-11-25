@@ -1,29 +1,16 @@
 - name: add telegraf repo key
   apt_key:
     url: https://repos.influxdata.com/influxdb.key
-    state: present
+    state: absent
 
 - name: add telegraf repo
   apt_repository:
     repo: deb https://repos.influxdata.com/ubuntu focal stable
-    state: present
+    state: absent
 
 - name: install telegraf
   apt:
     name: telegraf
     update_cache: yes
-    state: latest
+    state: absent
 
-- name: enable telegraf service
-  service:
-    name: telegraf
-    enabled: yes
-    state: started
-
-- name: update telegraf configuration
-  template:
-    src: telegraf.conf.j2
-    dest: /etc/telegraf/telegraf.conf
-    mode: 0644
-  notify:
-    - reload telegraf
