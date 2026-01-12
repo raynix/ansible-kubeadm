@@ -1,0 +1,108 @@
+- name: Install packages for Linux router
+  ansible.builtin.apt:
+    name:
+      - iptables
+      - iptables-persistent
+      - iproute2
+      - iputils-ping
+      - traceroute
+      - tcpdump
+      - dnsmasq
+      - hostapd
+    state: present
+    update_cache: yes
+
+- name: Configure network interfaces with netplan
+  ansible.builtin.copy:
+    dest: /etc/netplan/50-cloud-init.yaml
+    content: |
+      network:
+        version: 2
+        renderer: networkd
+        ethernets:
+          {{ router.wan }}:
+            dhcp4: true
+          {{ router.lan_home }}:
+            dhcp4: false
+            addresses:
+              - 192.168.1.254/24
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Apply netplan
+
+- name: Apply netplan configuration
+  ansible.builtin.command: netplan apply
+  changed_when: true
+
+- name: Configure dnsmasq for local DNS cache
+  ansible.builtin.copy:
+    dest: /etc/dnsmasq.conf
+    content: |
+      # Listen on the LAN interface only
+      interface={{ router.lan_home }}
+      bind-interfaces
+
+      # Set up DNS cache
+      cache-size=1000
+
+      # Use upstream DNS servers
+      server=8.8.8.8
+      server=8.8.4.4
+
+      # Never forward plain names (without a dot or domain part)
+      domain-needed
+
+      # Never forward addresses in the non-routed address spaces
+      bogus-priv
+
+      # DHCP range for LAN
+      dhcp-range=192.168.1.100,192.168.1.200,24h
+
+      # Gateway
+      dhcp-option=3,192.168.1.254
+
+      # DNS server
+      dhcp-option=6,192.168.1.254
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart dnsmasq
+
+- name: Enable and start dnsmasq service
+  ansible.builtin.systemd:
+    name: dnsmasq
+    enabled: yes
+    state: started
+
+- name: Configure DHCP server on LAN interface
+  ansible.builtin.copy:
+    dest: /etc/dhcp/dhcpd.conf
+    content: |
+      # DHCP server configuration for LAN
+      subnet 192.168.1.0 netmask 255.255.255.0 {
+        range 192.168.1.100 192.168.1.250;
+        option routers 192.168.1.254;
+        option domain-name-servers 192.168.1.254;
+        option subnet-mask 255.255.255.0;
+        default-lease-time 86400;
+        max-lease-time 86400;
+      }
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart dhcp server
+
+- name: Configure DHCP server to listen on LAN interface
+  ansible.builtin.lineinfile:
+    path: /etc/default/isc-dhcp-server
+    regexp: "^INTERFACESv4="
+    line: 'INTERFACESv4="{{ router.lan_home }}"'
+    create: yes
+  notify: Restart dhcp server
+
+- name: Enable and start DHCP server
+  ansible.builtin.systemd:
+    name: isc-dhcp-server
+    enabled: yes
+    state: started

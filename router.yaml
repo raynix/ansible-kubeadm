@@ -1,0 +1,7 @@
+- name: router
+  hosts: tempest
+  become: true
+  tags: router
+  roles:
+    - common
+    - router
