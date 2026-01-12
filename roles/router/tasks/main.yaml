@@ -1,17 +1,3 @@
-- name: Install packages for Linux router
-  ansible.builtin.apt:
-    name:
-      - iptables
-      - iptables-persistent
-      - iproute2
-      - iputils-ping
-      - traceroute
-      - tcpdump
-      - dnsmasq
-      - hostapd
-    state: present
-    update_cache: yes
-
 - name: Configure network interfaces with netplan
   ansible.builtin.copy:
     dest: /etc/netplan/50-cloud-init.yaml
@@ -21,19 +7,36 @@
         renderer: networkd
         ethernets:
           {{ router.wan }}:
-            dhcp4: true
+            dhcp4: false
+            addresses:
+              - 192.168.1.55/24
+            nameservers:
+              addresses:
+                - 192.168.1.254
+            gateway4: 192.168.1.254
           {{ router.lan_home }}:
             dhcp4: false
             addresses:
-              - 192.168.1.254/24
+              - 192.168.10.254/24
     owner: root
     group: root
-    mode: "0644"
-  notify: Apply netplan
+    mode: "0600"
 
-- name: Apply netplan configuration
+- name: Apply netplan
   ansible.builtin.command: netplan apply
   changed_when: true
+
+- name: Install packages for Linux router
+  ansible.builtin.apt:
+    name:
+      - nftables
+      - traceroute
+      - tcpdump
+      - isc-dhcp-server
+      - dnsmasq
+      - hostapd
+    state: present
+    update_cache: yes
 
 - name: Configure dnsmasq for local DNS cache
   ansible.builtin.copy:
@@ -69,12 +72,6 @@
     mode: "0644"
   notify: Restart dnsmasq
 
-- name: Enable and start dnsmasq service
-  ansible.builtin.systemd:
-    name: dnsmasq
-    enabled: yes
-    state: started
-
 - name: Configure DHCP server on LAN interface
   ansible.builtin.copy:
     dest: /etc/dhcp/dhcpd.conf
@@ -100,9 +97,3 @@
     line: 'INTERFACESv4="{{ router.lan_home }}"'
     create: yes
   notify: Restart dhcp server
-
-- name: Enable and start DHCP server
-  ansible.builtin.systemd:
-    name: isc-dhcp-server
-    enabled: yes
-    state: started
