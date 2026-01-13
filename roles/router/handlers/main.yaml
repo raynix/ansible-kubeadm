@@ -3,3 +3,9 @@
     name: dnsmasq
     enabled: yes
     state: restarted
+
+- name: Restart nftables
+  ansible.builtin.systemd:
+    name: nftables
+    enabled: yes
+    state: restarted

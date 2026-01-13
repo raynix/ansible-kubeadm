@@ -37,6 +37,14 @@
     state: present
     update_cache: yes
 
+- name: Enable IPv4 forwarding
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_forward
+    value: "1"
+    state: present
+    reload: true
+    sysctl_set: true
+
 - name: Configure dnsmasq for local DNS cache
   ansible.builtin.copy:
     dest: /etc/dnsmasq.conf
@@ -71,3 +79,77 @@
     group: root
     mode: "0600"
   notify: Restart dnsmasq
+
+- name: config nftables
+  ansible.builtin.copy:
+    dest: /etc/nftables.conf
+    content: |
+      #!/usr/sbin/nft -f
+
+      flush ruleset
+
+      # Define variables for interfaces
+      define WAN_IF = {{ router.wan }}
+      define LAN_IF = {{ router.lan_home }}
+      define LAN_NET = {{ router.lan_home_net }}/{{ router.lan_home_subnet }}
+
+      table inet filter {
+          chain input {
+              type filter hook input priority 0; policy drop;
+
+              # Allow established/related connections
+              ct state established,related accept
+
+              # Allow loopback
+              iifname "lo" accept
+
+              tcp dport 22 accept
+              tcp dport 53 accept
+              udp dport 53 accept
+              udp dport 67 accept
+              udp dport 68 accept
+
+              # Allow LAN to access router
+              iifname $LAN_IF accept
+
+              # Allow ICMP from WAN (for ping)
+              iifname $WAN_IF icmp type echo-request accept
+
+              # Drop invalid connections
+              ct state invalid drop
+          }
+
+          chain forward {
+              type filter hook forward priority 0; policy drop;
+
+              # Allow established/related connections
+              ct state established,related accept
+
+              # Allow LAN to WAN
+              iifname $LAN_IF oifname $WAN_IF accept
+
+              # Drop invalid connections
+              ct state invalid drop
+          }
+
+          chain output {
+              type filter hook output priority 0; policy accept;
+          }
+      }
+
+      table ip nat {
+          chain prerouting {
+              type nat hook prerouting priority -100; policy accept;
+
+              # Port forwarding examples (uncomment and adjust as needed)
+              # iifname $WAN_IF tcp dport 80 dnat to 192.168.1.100:80
+          }
+
+          chain postrouting {
+              type nat hook postrouting priority 100; policy accept;
+
+              # Masquerade LAN to WAN
+              oifname $WAN_IF ip saddr $LAN_NET masquerade
+          }
+      }
+  notify: Restart nftables

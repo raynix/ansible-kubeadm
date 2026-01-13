@@ -22,6 +22,7 @@ router:
   wan: eno1
   lan_home: ens6
   lan_home_ip: 192.168.10.254
+  lan_home_net: 192.168.10.0
   lan_home_subnet: 24
   lan_home_mask: 255.255.255.0
   lan_home_range: 192.168.10.100,192.168.10.250
