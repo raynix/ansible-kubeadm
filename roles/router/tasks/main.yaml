@@ -60,7 +60,7 @@
       bogus-priv
 
       # DHCP range for LAN
-      dhcp-range={{ router.lan_home_range }},24h
+      dhcp-range={{ router.lan_home_range }},{{ router.lan_home_mask }},24h
 
       # Gateway
       dhcp-option=3,{{ router.lan_home_ip }}
