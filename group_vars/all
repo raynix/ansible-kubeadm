@@ -21,3 +21,6 @@ kernel_modules:
 router:
   wan: eno1
   lan_home: ens6
+  lan_home_ip: 192.168.10.254
+  lan_home_subnet: 24
+  lan_home_range: 192.168.10.100,192.168.10.250

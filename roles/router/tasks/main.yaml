@@ -17,7 +17,7 @@
           {{ router.lan_home }}:
             dhcp4: false
             addresses:
-              - 192.168.10.254/24
+              - {{ router.lan_home_ip }}/{{ router.lan_home_subnet }}
     owner: root
     group: root
     mode: "0600"
@@ -32,7 +32,6 @@
       - nftables
       - traceroute
       - tcpdump
-      - isc-dhcp-server
       - dnsmasq
       - hostapd
     state: present
@@ -45,9 +44,10 @@
       # Listen on the LAN interface only
       interface={{ router.lan_home }}
       bind-interfaces
+      no-dhcp-interface={{ router.wan }}
 
       # Set up DNS cache
-      cache-size=1000
+      cache-size=10000
 
       # Use upstream DNS servers
       server=8.8.8.8
@@ -60,40 +60,14 @@
       bogus-priv
 
       # DHCP range for LAN
-      dhcp-range=192.168.1.100,192.168.1.200,24h
+      dhcp-range={{ router.lan_home_range }},24h
 
       # Gateway
-      dhcp-option=3,192.168.1.254
+      dhcp-option=3,{{ router.lan_home_ip }}
 
       # DNS server
-      dhcp-option=6,192.168.1.254
+      dhcp-option=6,{{ router.lan_home_ip }}
     owner: root
     group: root
-    mode: "0644"
+    mode: "0600"
   notify: Restart dnsmasq
-
-- name: Configure DHCP server on LAN interface
-  ansible.builtin.copy:
-    dest: /etc/dhcp/dhcpd.conf
-    content: |
-      # DHCP server configuration for LAN
-      subnet 192.168.10.0 netmask 255.255.255.0 {
-        range 192.168.10.100 192.168.10.250;
-        option routers 192.168.10.254;
-        option domain-name-servers 192.168.10.254;
-        option subnet-mask 255.255.255.0;
-        default-lease-time 86400;
-        max-lease-time 86400;
-      }
-    owner: root
-    group: root
-    mode: "0644"
-  notify: Restart dhcp server
-
-- name: Configure DHCP server to listen on LAN interface
-  ansible.builtin.lineinfile:
-    path: /etc/default/isc-dhcp-server
-    regexp: "^INTERFACESv4="
-    line: 'INTERFACESv4="{{ router.lan_home }}"'
-    create: yes
-  notify: Restart dhcp server

@@ -3,8 +3,3 @@
     name: dnsmasq
     enabled: yes
     state: restarted
-- name: Restart dhcp server
-  ansible.builtin.systemd:
-    name: isc-dhcp-server
-    enabled: yes
-    state: restarted
