@@ -6,18 +6,20 @@
         version: 2
         renderer: networkd
         ethernets:
-          {{ router.wan }}:
+          {{ router.admin }}:
             dhcp4: false
             addresses:
               - 192.168.1.55/24
-            nameservers:
-              addresses:
-                - 192.168.1.254
-            gateway4: 192.168.1.254
+          {{ router.wan }}:
+            dhcp4: true
           {{ router.lan_home }}:
             dhcp4: false
             addresses:
               - {{ router.lan_home_ip }}/{{ router.lan_home_subnet }}
+          {{ router.lan_lab }}:
+            dhcp4: false
+            addresses:
+              - {{ router.lan_lab_ip }}/{{ router.lan_lab_subnet }}
     owner: root
     group: root
     mode: "0600"
@@ -51,6 +53,7 @@
     content: |
       # Listen on the LAN interface only
       interface={{ router.lan_home }}
+      interface={{ router.lan_lab }}
       bind-interfaces
       no-dhcp-interface={{ router.wan }}
 
@@ -68,13 +71,16 @@
       bogus-priv
 
       # DHCP range for LAN
-      dhcp-range={{ router.lan_home_range }},{{ router.lan_home_mask }},24h
+      dhcp-range={{ router.lan_home }},{{ router.lan_home_range }},{{ router.lan_home_mask }},24h
+      dhcp-range={{ router.lan_lab }},{{ router.lan_lab_range }},{{ router.lan_lab_mask }},24h
 
       # Gateway
-      dhcp-option=3,{{ router.lan_home_ip }}
+      dhcp-option=tag:{{ router.lan_home }},3,{{ router.lan_home_ip }}
+      dhcp-option=tag:{{ router.lan_lab }},3,{{ router.lan_lab_ip }}
 
       # DNS server
-      dhcp-option=6,{{ router.lan_home_ip }}
+      dhcp-option=tag:{{ router.lan_home }},6,{{ router.lan_home_ip }}
+      dhcp-option=tag:{{ router.lan_lab }},6,{{ router.lan_lab_ip }}
     owner: root
     group: root
     mode: "0600"
@@ -90,8 +96,10 @@
 
       # Define variables for interfaces
       define WAN_IF = {{ router.wan }}
-      define LAN_IF = {{ router.lan_home }}
-      define LAN_NET = {{ router.lan_home_net }}/{{ router.lan_home_subnet }}
+      define LAN_HOME_IF = {{ router.lan_home }}
+      define LAN_HOME_NET = {{ router.lan_home_net }}/{{ router.lan_home_subnet }}
+      define LAN_LAB_IF = {{ router.lan_lab }}
+      define LAN_LAB_NET = {{ router.lan_lab_net }}/{{ router.lan_lab_subnet }}
 
       table inet filter {
           chain input {
@@ -110,7 +118,8 @@
               udp dport 68 accept
 
               # Allow LAN to access router
-              iifname $LAN_IF accept
+              iifname $LAN_HOME_IF accept
+              iifname $LAN_LAB_IF accept
 
               # Allow ICMP from WAN (for ping)
               iifname $WAN_IF icmp type echo-request accept
@@ -126,7 +135,8 @@
               ct state established,related accept
 
               # Allow LAN to WAN
-              iifname $LAN_IF oifname $WAN_IF accept
+              iifname $LAN_HOME_IF oifname $WAN_IF accept
+              iifname $LAN_LAB_IF oifname $WAN_IF accept
 
               # Drop invalid connections
               ct state invalid drop
@@ -149,7 +159,8 @@
               type nat hook postrouting priority 100; policy accept;
 
               # Masquerade LAN to WAN
-              oifname $WAN_IF ip saddr $LAN_NET masquerade
+              oifname $WAN_IF ip saddr $LAN_HOME_NET masquerade
+              oifname $WAN_IF ip saddr $LAN_LAB_NET masquerade
           }
       }
   notify: Restart nftables

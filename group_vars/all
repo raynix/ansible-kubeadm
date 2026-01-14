@@ -19,10 +19,17 @@ kernel_modules:
   - xt_owner
   - xt_tcpudp
 router:
-  wan: eno1
-  lan_home: ens6
+  admin: eno1
+  wan: enp6s0f0
+  lan_home: enp8s0f0
   lan_home_ip: 192.168.10.254
   lan_home_net: 192.168.10.0
   lan_home_subnet: 24
   lan_home_mask: 255.255.255.0
   lan_home_range: 192.168.10.100,192.168.10.250
+  lan_lab: enp8s0f1
+  lan_lab_ip: 192.168.1.254
+  lan_lab_net: 192.168.1.0
+  lan_lab_subnet: 24
+  lan_lab_mask: 255.255.255.0
+  lan_lab_range: 192.168.1.100,192.168.1.250
