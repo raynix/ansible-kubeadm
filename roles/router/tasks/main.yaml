@@ -160,3 +160,23 @@
           }
       }
   notify: Restart nftables
+
+- name: Create systemd override directory for networkd-wait-online
+  ansible.builtin.file:
+    path: /etc/systemd/system/systemd-networkd-wait-online.service.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Override systemd-networkd-wait-online.service to add --any flag
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/systemd-networkd-wait-online.service.d/override.conf
+    content: |
+      [Service]
+      ExecStart=
+      ExecStart=/lib/systemd/systemd-networkd-wait-online --any
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload systemd
