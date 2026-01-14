@@ -101,7 +101,7 @@
       define LAN_LAB_IF = {{ router.lan_lab }}
       define LAN_LAB_NET = {{ router.lan_lab_net }}/{{ router.lan_lab_subnet }}
 
-      table inet filter {
+      table ip filter {
           chain input {
               type filter hook input priority 0; policy drop;
 
@@ -131,6 +131,9 @@
               iifname $LAN_HOME_IF oifname $WAN_IF accept
               iifname $LAN_LAB_IF oifname $WAN_IF accept
 
+              # sample port forwarding
+              tcp dport 8080 accept
+
               # Drop invalid connections
               ct state invalid drop
           }
@@ -144,8 +147,8 @@
           chain prerouting {
               type nat hook prerouting priority -100; policy accept;
 
-              # Port forwarding examples (uncomment and adjust as needed)
-              # iifname $WAN_IF tcp dport 80 dnat to 192.168.1.100:80
+              # sample port forwarding
+              tcp dport 8080 dnat to 192.168.10.248:8080
           }
 
           chain postrouting {
