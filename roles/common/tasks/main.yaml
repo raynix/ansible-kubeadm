@@ -1,12 +1,12 @@
 ---
 - name: set hostname
   hostname:
-    name: '{{inventory_hostname}}'
+    name: "{{inventory_hostname}}"
 
 - name: update hosts
   lineinfile:
     path: /etc/hosts
-    line: '127.0.0.1 {{inventory_hostname}}'
+    line: "127.0.0.1 {{inventory_hostname}}"
 
 - name: Disable swap
   shell: swapoff -a
@@ -28,3 +28,13 @@
 - name: set timezone
   timezone:
     name: Australia/Melbourne
+
+- name: deny root login
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^\s*#?\s*PermitRootLogin'
+    line: "PermitRootLogin no"
+    state: present
+    validate: "sshd -t -f %s" # Validates the config file syntax before changing it
+  notify:
+    - Restart sshd service
