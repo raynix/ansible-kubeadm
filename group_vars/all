@@ -20,6 +20,8 @@ kernel_modules:
   - xt_tcpudp
 router:
   admin: eno1
+  admin_ip: 192.168.197.6
+  admin_subnet: 24
   wan: enp6s0f0
   lan_home: enp8s0f0
   lan_home_ip: 192.168.10.254

@@ -18,11 +18,17 @@
             addresses:
               - {{ router.lan_home_ip }}/{{ router.lan_home_subnet }}
             optional: true
+            routes:
+              - to: {{ router.lan_lab_net }}/{{ router.lan_lab_subnet }}
+                via: {{ router.lan_lab_ip }}
           {{ router.lan_lab }}:
             dhcp4: false
             addresses:
               - {{ router.lan_lab_ip }}/{{ router.lan_lab_subnet }}
             optional: true
+            routes:
+              - to: {{ router.lan_home_net }}/{{ router.lan_home_subnet }}
+                via: {{ router.lan_home_ip }}
     owner: root
     group: root
     mode: "0600"
@@ -56,7 +62,7 @@
     content: |
       # Listen on the LAN interface only
       interface={{ router.lan_home }}
-      #interface={{ router.lan_lab }}
+      interface={{ router.lan_lab }}
       bind-interfaces
       no-dhcp-interface={{ router.wan }}
 
@@ -75,15 +81,18 @@
 
       # DHCP range for LAN
       dhcp-range={{ router.lan_home }},{{ router.lan_home_range }},{{ router.lan_home_mask }},24h
-      #dhcp-range={{ router.lan_lab }},{{ router.lan_lab_range }},{{ router.lan_lab_mask }},24h
+      dhcp-range={{ router.lan_lab }},{{ router.lan_lab_range }},{{ router.lan_lab_mask }},24h
 
       # Gateway
       dhcp-option=tag:{{ router.lan_home }},3,{{ router.lan_home_ip }}
-      #dhcp-option=tag:{{ router.lan_lab }},3,{{ router.lan_lab_ip }}
+      dhcp-option=tag:{{ router.lan_lab }},3,{{ router.lan_lab_ip }}
 
       # DNS server
       dhcp-option=tag:{{ router.lan_home }},6,{{ router.lan_home_ip }}
-      #dhcp-option=tag:{{ router.lan_lab }},6,{{ router.lan_lab_ip }}
+      dhcp-option=tag:{{ router.lan_lab }},6,{{ router.lan_lab_ip }}
+
+      # static routes
+      dhcp-option=tag:{{ router.lan_home }},121,{{ router.lan_lab_net }}/{{ router.lan_lab_subnet }},{{ router.lan_lab_ip }}
     owner: root
     group: root
     mode: "0600"
