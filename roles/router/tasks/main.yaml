@@ -130,6 +130,7 @@
               iifname $WAN_IF icmp type echo-request accept
 
               # Drop invalid connections
+              iifname $WAN_IF tcp dport 22 drop
               ct state invalid drop
           }
 
