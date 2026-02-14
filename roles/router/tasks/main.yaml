@@ -129,6 +129,9 @@
               # Allow ICMP from WAN (for ping)
               iifname $WAN_IF icmp type echo-request accept
 
+              tcp dport 80 accept
+              tcp dport 443 accept
+
               # Drop invalid connections
               iifname $WAN_IF tcp dport 22 drop
               ct state invalid drop
@@ -145,7 +148,7 @@
               iifname $LAN_LAB_IF oifname $WAN_IF accept
 
               # sample port forwarding
-              tcp dport 8080 accept
+              tcp dport 6443 accept
 
               # Drop invalid connections
               ct state invalid drop
@@ -161,7 +164,7 @@
               type nat hook prerouting priority -100; policy accept;
 
               # sample port forwarding
-              tcp dport 8080 dnat to 192.168.10.248:8080
+              iifname $WAN_IF tcp dport 443 dnat to 192.168.1.92:6443
           }
 
           chain postrouting {
@@ -170,6 +173,9 @@
               # Masquerade LAN to WAN
               oifname $WAN_IF ip saddr $LAN_HOME_NET masquerade
               oifname $WAN_IF ip saddr $LAN_LAB_NET masquerade
+
+              # Needed according to Google but not really?
+              # oifname $WAN_IF ip daddr 192.168.1.92 masquerade
           }
       }
   notify: Restart nftables
